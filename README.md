@@ -1,7 +1,7 @@
 
 # CDCL-NLI: Cross-Domain Contrastive Learning for Natural Language Inference
 
-This repository introduces a dataset and method for ***cross-document cross-lingual NLI*** .
+This repository introduces a dataset and method for **Cross-Document Cross-Lingual NLI** .
 
 ## Overview
 
@@ -42,5 +42,5 @@ nism for cross-lingual understanding. To enhance interpretability, we develop an
 4. **Train the Model**  
    Train the model using the saved graph:
    ```bash
-   bash ./run.sh
+   bash ./run_job.sh
    ```
