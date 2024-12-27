@@ -11,7 +11,7 @@ from dgl.dataloading import GraphDataLoader
 from build_base_graph_extract import build_graph
 import logging
 
-# 设置日志
+# Set up logging
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
@@ -47,16 +47,16 @@ def extract_node_features(embeddings_data, idx, prefix):
 def load_all_embeddings(directory_path):
     embeddings_list = []
 
-    # 获取文件名列表
+    # Get the list of filenames
     filenames = os.listdir(directory_path)
 
-    # 定义一个函数来提取文件名中的数字
+    # Define a function to extract numbers from filenames
     def extract_number(filename):
-        # 使用正则表达式提取文件名中的数字部分
+        # Use regular expressions to extract the numeric part of the filename
         match = re.search(r"\d+", filename)
         return int(match.group()) if match else float("inf")
 
-    # 根据文件名中的数字进行排序
+    # Sort filenames based on the extracted numbers
     sorted_filenames = sorted(filenames, key=extract_number)
 
     for filename in sorted_filenames:
@@ -87,12 +87,12 @@ class RSTDataset(Dataset):
     def __init__(
         self,
         rst_path,
-        nli_data_path,  # 假设数据
-        premise_emb_path,  # 假设的embedding,
+        nli_data_path,  # Assumed data
+        premise_emb_path,  # Assumed embeddings
         lexical_matrix_path,
         hypothesis_emb_path,
-        batch_file_size=1,  # 每批处理的文件数量
-        save_dir="./graph_pairs",  # 保存 graph_pairs 的目录
+        batch_file_size=1,  # Number of files processed per batch
+        save_dir="./graph_pairs",  # Directory to save graph_pairs
     ):
         self.rst_path = rst_path
         self.nli_data_path = nli_data_path
@@ -102,52 +102,52 @@ class RSTDataset(Dataset):
         self.batch_file_size = batch_file_size
         self.save_dir = save_dir
 
-        # 确保保存目录存在
+        # Ensure the save directory exists
         os.makedirs(self.save_dir, exist_ok=True)
-        # 存储提前构建好的图，避免在训练时再构建
+        # Store pre-built graphs to avoid building them during training
         self.graph_pairs = []
 
     def load_edu_labels(self, nli_data):
-        # edu_lables 长度是2/3nli数据量
+        # edu_labels length is 2/3 of the NLI data size
         edu_labels = []
         for item in nli_data:
             if "evidence_edu" not in item:
                 continue
             else:
                 edu_labels.append(item["evidence_edu"])
-        return edu_labels  # 中立不计算
+        return edu_labels  # Neutral cases are not calculated
 
     def _create_label_tensor(self, g, positive_nodes):
-        """为给定的图和正例节点创建标签张量"""
+        """Create a label tensor for the given graph and positive nodes"""
         num_nodes = g.number_of_nodes()
         labels = torch.zeros(num_nodes, dtype=torch.long)
         positive_nodes = [int(node) for node in positive_nodes]
-        if positive_nodes:  # 如果有正例节点
-            # 将 positive_nodes 转换为 tensor 以便进行比较
+        if positive_nodes:  # If there are positive nodes
+            # Convert positive_nodes to tensor for comparison
             positive_nodes_tensor = torch.tensor(positive_nodes)
 
-            # 检查是否有节点超出范围
+            # Check if any nodes are out of range
             if torch.any(positive_nodes_tensor >= num_nodes):
                 invalid_nodes = positive_nodes_tensor[
                     positive_nodes_tensor >= num_nodes
                 ]
                 valid_nodes = positive_nodes_tensor[
-                    positive_nodes_tensor < num_nodes  # 保留有效节点
+                    positive_nodes_tensor < num_nodes  # Keep valid nodes
                 ]
                 raise ValueError(
-                    f"发现无效的节点索引: {invalid_nodes.tolist()}. "
-                    f"节点索引应该在 0 到 {num_nodes-1} 之间。"
+                    f"Invalid node indices found: {invalid_nodes.tolist()}. "
+                    f"Node indices should be between 0 and {num_nodes-1}."
                 )
                 labels[valid_nodes] = 1
                 return labels
-            # 如果所有节点都有效，则设置标签
+            # If all nodes are valid, set labels
             labels[positive_nodes_tensor] = 1
 
         return labels
 
     def load_rst_data(self):
         """
-        加载 RST 数据，只需要加载一次。
+        Load RST data, only needs to be done once.
         """
         rst_results = []
         with open(self.rst_path, "r") as file:
@@ -158,7 +158,7 @@ class RSTDataset(Dataset):
 
     def load_nli_data(self):
         """
-        加载模型输出，只需要加载一次。
+        Load model output, only needs to be done once.
         """
         with open(self.nli_data_path, "r", encoding="utf-8") as file:
             nli_data = json.load(file)
@@ -166,22 +166,22 @@ class RSTDataset(Dataset):
 
     def load_batch_files(self, batch_num):
         """
-        根据批次号加载相应的词汇链和嵌入文件，并构建图。
-        如果已存在保存的 graph_pairs 文件，则直接加载。
+        Load corresponding lexical chain and embedding files based on batch number,
+        and build graphs. If saved graph_pairs file exists, load it directly.
         """
-        # 保存的 graph_pairs 文件名
+        # Filename for saved graph_pairs
         save_file = os.path.join(self.save_dir, f"graph_pairs_batch_{batch_num}.pkl")
 
-        # 如果文件已存在，直接加载
+        # If the file exists, load it directly
         if os.path.isfile(save_file):
             with open(save_file, "rb") as f:
                 self.graph_pairs = pickle.load(f)
             logging.info("Loaded graph pairs from %s", save_file)
             return
 
-        # 否则加载文件，构建图并保存
+        # Otherwise, load files, build graphs, and save
         print("embedding dir exists")
-        # 获取所有文件的路径并排序
+        # Get all file paths and sort them
         self.data = self.load_rst_data()
         self.nli_data = self.load_nli_data()
         self.hyp_emb = torch.load(self.hypothesis_emb_path)  # [(1,2,3),(),...]
@@ -190,25 +190,25 @@ class RSTDataset(Dataset):
         batch_lexical_chains = []
         batch_embeddings = []
 
-        # 加载词汇链
+        # Load lexical chains
         with open(self.lexical_matrix_path, "rb") as f:
             batch_lexical_chains.extend(pickle.load(f))
 
-        # 加载嵌入
+        # Load embeddings
         batch_embeddings.extend(torch.load(self.premise_emb_path))
 
-        # 根据词汇链和嵌入构建图
+        # Build graphs based on lexical chains and embeddings
         self.graph_pairs = self.build_graphs(
             batch_lexical_chains, batch_embeddings, self.hyp_emb, self.edu_labels
         )
 
-        # 保存构建的 graph_pairs
+        # Save the built graph_pairs
         with open(save_file, "wb") as f:
             pickle.dump(self.graph_pairs, f)
 
     def build_graphs(self, lexical_chains, embeddings, hyp_emb, edu_labels):
         """
-        根据加载的词汇链和嵌入构建图。
+        Build graphs based on loaded lexical chains and embeddings.
         """
         graph_pairs = []
         assert len(hyp_emb) * 3 == len(self.data)
@@ -217,7 +217,7 @@ class RSTDataset(Dataset):
             rst_result = self.data[idx * 3]
             hyp_emb_three = hyp_emb[idx]
 
-            # 构建图
+            # Build graphs
             node_features_premise = extract_node_features(embeddings, count, "premise")
             rst_relations_premise = rst_result["rst_relation_premise"]
             node_types_premise = rst_result["pre_node_type"]
@@ -237,7 +237,7 @@ class RSTDataset(Dataset):
             )
             if edu_labels == []:
                 if idx == 0:
-                    print("empty edu_labels")  # 单语言的没有
+                    print("empty edu_labels")  # Single language has none
                 edu_labels_three = {"entailment": [], "contradiction": []}
             else:
                 edu_label_entailment = edu_labels[idx * 2]

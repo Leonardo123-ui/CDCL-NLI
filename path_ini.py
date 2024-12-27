@@ -5,7 +5,7 @@ from data_loader_extract import RSTDataset
 import logging
 import torch
 
-# 设置日志
+# setlog
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
@@ -28,11 +28,11 @@ class Config:
         self.seed = kwargs.get("seed", 42)
         self.stage = kwargs.get("stage", "classification")
         self.mode = kwargs.get("mode", "train")
-        # 基础路径配置
+        # basic path
         self.base_dir = kwargs.get("base_dir", "/mnt/nlp/yuanmengying")
         self.batch_file_size = kwargs.get("batch_file_size", 1)
 
-        # 训练相关配置
+        # training set
         self.epochs = kwargs.get("epochs", 7)
         self.batch_size = kwargs.get("batch_size", 10)
         self.save_dir = kwargs.get("save_dir", "checkpoints")
@@ -42,7 +42,7 @@ class Config:
         self.tensorboard_dir = kwargs.get("tensorboard_dir", "runs")
         self.eval_interval = kwargs.get("eval_interval", 1)
 
-        # 优化器相关配置
+        # optimizer setting
         self.warmup_ratio = kwargs.get("warmup_ratio", 0.1)
         self.lr = kwargs.get("lr", 0.001)
         self.total_steps = kwargs.get("total_steps", 1000)
@@ -51,7 +51,7 @@ class Config:
         self.device = kwargs.get(
             "device", torch.device("cuda" if torch.cuda.is_available() else "cpu")
         )
-        # 模型配置
+        # model setting
         self.model_config = kwargs.get(
             "model_config",
             {
@@ -59,14 +59,6 @@ class Config:
                 "hidden_dim": 1024,
                 "n_classes": 3,
                 "rel_names": [
-                    # "Cause",
-                    # "Condition",
-                    # "Contrast",
-                    # "Explanation",
-                    # "Elaboration",
-                    # "Attribution",
-                    # "Background",
-                    # "lexical",
                     "Temporal",
                     "TextualOrganization",
                     "Joint",
@@ -85,17 +77,17 @@ class Config:
                     "Explanation",
                     "Same-Unit",
                     "Elaboration",
-                    "span",  # 可以考虑去掉，因为关系不密切
-                    "lexical",  # 词汇链
+                    "span",
+                    "lexical",
                 ],
             },
         )
 
-        # 初始化数据路径
+        # init path
         self._init_data_paths()
 
     def _init_data_paths(self):
-        """初始化所有数据路径"""
+        """init all data path"""
         self.paths = {
             "train": DataPaths(
                 rst_path=(
@@ -149,7 +141,7 @@ class Config:
 
     @classmethod
     def from_dict(cls, config_dict: Dict):
-        """从字典创建配置实例"""
+        """set instance from dict"""
         return cls(**config_dict)
 
     def to_dict(self):
@@ -163,7 +155,7 @@ class Config:
 
 
 def data_model_loader(device):
-    # 创建配置实例
+    # build config
     config = Config(
         save_dir="checkpoints/experiment1",
         tensorboard_dir="runs/experiment1",
@@ -172,7 +164,7 @@ def data_model_loader(device):
         device=device,
     )
 
-    # 创建数据集
+    # create dataset
     logging.info("Processing train data")
     train_dataset = RSTDataset(
         config.paths["train"].rst_path,
@@ -207,10 +199,10 @@ def data_model_loader(device):
     )
     config.total_steps = (
         222 // config.batch_size * config.epochs
-    )  # data_loader的长度乘以epochs
+    )  # data_loader'length * epochs
     config.warmup_steps = int(config.total_steps * config.warmup_ratio)
     config.steps_per_epoch = len(train_dataset) / 3 // config.batch_size
-    # 初始化模型
+    # init model
     return config, train_dataset, dev_dataset, test_dataset
 
 

@@ -12,22 +12,22 @@ smoothing_function = SmoothingFunction().method1
 
 def calculate_graph_bleu(exp_text, generated_explanations):
     """
-    计算BLEU分数
+    Calculate BLEU score
     Args:
-        generated_explanations: 预测的解释文本列表
-        exp_text: 参考的解释文本列表
+        generated_explanations: List of predicted explanation texts
+        exp_text: List of reference explanation texts
     Returns:
-        float: BLEU分数
+        float: BLEU score
     """
-    # 将列表中的字符串连接起来
+    # Join strings in the list
     gen_exp = " ".join(generated_explanations)
     ref_exp = " ".join(exp_text)
 
-    # 使用BART tokenizer进行分词
+    # Tokenize using the BART tokenizer
     gen_tokens = tokenizer.tokenize(gen_exp)
     ref_tokens = tokenizer.tokenize(ref_exp)
 
-    # 计算BLEU分数
+    # Calculate BLEU score
     bleu_score = sentence_bleu(
         [ref_tokens], gen_tokens, smoothing_function=smoothing_function
     )
@@ -37,41 +37,41 @@ def calculate_graph_bleu(exp_text, generated_explanations):
 
 def accuracy_score(y_true, y_pred):
     """
-    计算准确率
+    Calculate accuracy
 
-    参数:
-    y_true: 真实标签列表或数组
-    y_pred: 预测标签列表或数组
+    Args:
+    y_true: List or array of true labels
+    y_pred: List or array of predicted labels
 
-    返回:
-    float: 准确率（正确预测的样本比例）
+    Returns:
+    float: Accuracy (proportion of correctly predicted samples)
     """
     y_true = np.array(y_true)
     y_pred = np.array(y_pred)
 
     if len(y_true) != len(y_pred):
-        raise ValueError("y_true 和 y_pred 必须具有相同的长度。")
+        raise ValueError("y_true and y_pred must have the same length.")
 
     return np.mean(y_true == y_pred)
 
 
 def precision_score(y_true, y_pred, average="macro"):
     """
-    计算精确率
+    Calculate precision
 
-    参数:
-    y_true: 真实标签列表或数组
-    y_pred: 预测标签列表或数组
-    average: 'macro' 用于计算宏平均精确率
+    Args:
+    y_true: List or array of true labels
+    y_pred: List or array of predicted labels
+    average: 'macro' for macro-average precision
 
-    返回:
-    float: 精确率
+    Returns:
+    float: Precision
     """
     y_true = np.array(y_true)
     y_pred = np.array(y_pred)
 
     if len(y_true) != len(y_pred):
-        raise ValueError("y_true 和 y_pred 必须具有相同的长度。")
+        raise ValueError("y_true and y_pred must have the same length.")
 
     labels = np.unique(np.concatenate([y_true, y_pred]))
     precisions = []
@@ -90,26 +90,26 @@ def precision_score(y_true, y_pred, average="macro"):
     if average == "macro":
         return np.mean(precisions)
     else:
-        raise ValueError("目前只支持 'macro' 平均方法")
+        raise ValueError("Only 'macro' averaging method is currently supported")
 
 
 def recall_score(y_true, y_pred, average="macro"):
     """
-    计算召回率
+    Calculate recall
 
-    参数:
-    y_true: 真实标签列表或数组
-    y_pred: 预测标签列表或数组
-    average: 'macro' 用于计算宏平均召回率
+    Args:
+    y_true: List or array of true labels
+    y_pred: List or array of predicted labels
+    average: 'macro' for macro-average recall
 
-    返回:
-    float: 召回率
+    Returns:
+    float: Recall
     """
     y_true = np.array(y_true)
     y_pred = np.array(y_pred)
 
     if len(y_true) != len(y_pred):
-        raise ValueError("y_true 和 y_pred 必须具有相同的长度。")
+        raise ValueError("y_true and y_pred must have the same length.")
 
     labels = np.unique(np.concatenate([y_true, y_pred]))
     recalls = []
@@ -128,20 +128,20 @@ def recall_score(y_true, y_pred, average="macro"):
     if average == "macro":
         return np.mean(recalls)
     else:
-        raise ValueError("目前只支持 'macro' 平均方法")
+        raise ValueError("Only 'macro' averaging method is currently supported")
 
 
 def f1_score(y_true, y_pred, average="macro"):
     """
-    计算 F1 分数
+    Calculate F1 score
 
-    参数:
-    y_true: 真实标签列表或数组
-    y_pred: 预测标签列表或数组
-    average: 'macro' 用于计算宏平均 F1 分数
+    Args:
+    y_true: List or array of true labels
+    y_pred: List or array of predicted labels
+    average: 'macro' for macro-average F1 score
 
-    返回:
-    float: F1 分数
+    Returns:
+    float: F1 score
     """
     precision = precision_score(y_true, y_pred, average=average)
     recall = recall_score(y_true, y_pred, average=average)
@@ -154,24 +154,22 @@ def f1_score(y_true, y_pred, average="macro"):
 
 def is_best_model(current_results, best_results, stage):
     """
-    判断当前模型是否为最佳模型
+    Determine whether the current model is the best model
 
     Args:
-        current_metrics: 当前评估指标字典
-        best_metric: 历史最佳指标值
-        stage: 训练阶段
+        current_metrics: Dictionary of current evaluation metrics
+        best_metric: Historical best metric value
+        stage: Training stage
     """
     if stage == "classification":
         current = current_results["classification_metrics"]["f1_macro_cli"]
     elif stage == "generation":
         current = current_results["generation_metrics"]["f1_macro_gen"]
     else:  # joint
-        # 对于联合训练，可以使用加权组合
-
+        # For joint training, weighted combination can be used
         current = (
             current_results["classification_metrics"]["f1_macro_cli"] * 0.8
             + current_results["generation_metrics"]["f1_macro_gen"] * 0.2
         )
-        # current = current_results["classification_metrics"]["f1_macro_cli"]
 
     return current > best_results
